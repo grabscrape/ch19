@@ -50,7 +50,11 @@ sub fetch {
     printf ' ... ';
     my $where = $ff->fetch( to => '/tmp' );
     #say 'Where: ', $where;
-    rename $where, $file;
+    #say `ls -lt $where`;
+    #rename $where, $file or die "rename error $!";
+    #say `ls -lt $file`;
+    `mv $where  $file`;
+    #say `ls -lt $file`;
     return -s $file;
 }
 

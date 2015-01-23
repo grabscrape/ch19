@@ -116,24 +116,43 @@ sub parse {
             } elsif( $td0 eq 'Telefon:' ) {
                 my $ph= $td1->at('span')->text;
                 $tmp->{Telefon} =  $ph;
+            } elsif( uc $td0 eq 'FAX:' ) {
+                #say "$td0 ", $td1->at('span')->text;
+                $tmp->{Fax} = $td1->at('span')->text;
             } else {
-                #warn "$td0 abnormal contact";
+                #say "$td0 abnormal contact";
             }
             #say "$td0"; # $td1";
         }
-        #say Dumper $tmp;
 
         my $table2 = $dom->at('table.eintragsub');
         if( $table2 ) {
-            $rows = $table1->find('tr');
+            $rows = $table2->find('tr');
+            $nrows = scalar @$rows;
             #say "NROWS2 ", scalar @$rows;
             for( my $j=0; $j<$nrows; $j++ ) {
                 $tds = $rows->[$j]->find('td');
-                say "TDSN: ", scalar @$tds;
-            #say "NROWS2 ", scalar @$rows;
+                my $ntds = scalar @$tds;
+                if( $ntds == 2 ) {
+                    my $td0 = $tds->[0]->text;
+                    my $td1 = $tds->[1];
+                    if( $td0 eq 'Sprachen:' ) {
+                        #say $td1->text;
+                        $tmp->{Language} = $td1->text;
+                    }
+                } else {
+                    #say "TDSN: $ntds";
+                    for( my $k=0; $k < $ntds; $k++ ) {
+                        my $text = $tds->[$k]; 
+                        if( $text =~ m/Spra/i ) {
+                            die "$text Sprachen";
+                        }
+                    }
+                }
             }
         } else {
             #say "table2  not defined";
         }
+        say Dumper $tmp;
     }
 } 
