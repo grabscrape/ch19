@@ -43,6 +43,8 @@ sub parse {
 
     for(my $i=0; $i<$n; $i++  ) {
         my $tmp = {};
+        $tmp->{num} = $i;
+        $tmp->{file} = $file;
         my $e = $div_col->[$i] . '';
         #my $e = $div_col->[$i]->join('ff'); # . '';
         #my $e = $div_col->[$i]->children->join();
