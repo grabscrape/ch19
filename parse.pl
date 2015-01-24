@@ -12,7 +12,7 @@ use Encode;
 use utf8;
 use strict;
 #my $output = `find ./Cache -type f -name file010.html | head -3`;
-my $output = `find ./Cache -type f -name file\*.html | head -3000`;
+my $output = `find ./Cache -type f -name file030.html | head -3000`;
 #my $output = `find ./Cache -type f -name file300.html | head -3000`;
 
 my @data = ();
@@ -42,6 +42,7 @@ sub parse {
     #say "Scalar: $n";
 
     for(my $i=0; $i<$n; $i++  ) {
+#next if $i!=4;
         my $tmp = {};
         $tmp->{num} = $i;
         $tmp->{file} = $file;
@@ -53,13 +54,29 @@ sub parse {
 
         my $link = $dom->at('h3')->at('a');
         $tmp->{Institution} = $link->text;
+#say "Inst: ", $tmp->{Institution};
         $tmp->{Link} = $link->attr('href');
-        
+#say "Link: ", $tmp->{Link};
+       
         #->attr('href');
         #say 'Link: ', $link;
 
         my $names = $dom->at('h4');
-        $tmp->{Names} =  ($names?$names->text:'');
+        $names = $names?$names->text:'';
+        $tmp->{Names} =  $names;
+
+#say "*********** Names: $tmp->{Names}";
+        my $title = $dom->at('h6');
+        $title = ($title?$title->text:'');
+        $tmp->{Title} = $title;
+
+if( $names =~ m/\&/ ) {
+    #say "             Names $names : $title \t\t ", $tmp->{Link} ;
+}
+#next;
+
+if( $names eq '' and $title ne '' ) {
+}
 
         my $address = $dom->at('address')->find('span');
         my $an = scalar @$address;
@@ -155,6 +172,17 @@ sub parse {
         } else {
             #say "table2  not defined";
         }
+
+
+
+
+next if $tmp->{Fax} ne '044 241 35 30';
+
+my $collab = $dom->at('div.eintraginfo');
+my $collab_divs = $collab->find('div')->[0]->find('a');
+say $collab_divs->[0];
+exit 0;
+
         say Dumper $tmp;
     }
 } 
