@@ -41,7 +41,7 @@ foreach my $line (split /\n/, $output ) {
     push @data, parse( $line );
 #exit 0;
 }
-exit 0;
+#exit 0;
 #say Dumper \@data;
 use utf8;
 open CSV, ">ch19.csv";
@@ -241,7 +241,14 @@ sub parse {
             push @{$tmp->{amper0}}, $one, $two;
             #say "$name\n\t$one\n\t$two";
         }
-        say Dumper $tmp; # if $amper;
+        #say Dumper $tmp 
+        if( $name eq '' ) {
+            my @search = split /\s+/, $tmp->{Institution};
+            if( scalar @search == 2 ) {
+                $tmp->{Institution} = '';
+                $tmp->{Name} = join ' ', @search;
+            }
+        }
         push @data0, $tmp;
     }
 
