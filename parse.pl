@@ -12,9 +12,10 @@ use Encode;
 use utf8;
 use strict;
 #my $output = `find ./Cache -type f -name file010.html | head -3`;
-my $output = `find ./Cache -type f -name file030.html | head -3000`;
+my $output = `find ./Cache -type f -name file*.html | head -3000`;
 #my $output = `find ./Cache -type f -name file300.html | head -3000`;
 
+my $gnum=0;
 my @data = ();
 foreach my $line (split /\n/, $output ) {
     #say $line;
@@ -44,6 +45,7 @@ sub parse {
     for(my $i=0; $i<$n; $i++  ) {
 #next if $i!=4;
         my $tmp = {};
+        my $tmp->{gnum} = ++$gnum;
         $tmp->{num} = $i;
         $tmp->{file} = $file;
         my $e = $div_col->[$i] . '';
@@ -173,16 +175,44 @@ if( $names eq '' and $title ne '' ) {
             #say "table2  not defined";
         }
 
+        #next if $tmp->{Fax} ne '044 241 35 30';
 
 
+        my $ncollab=0;
+        my $collab = $dom->at('div.eintraginfo');
+        if( $collab ) {
+            my $collab_divs = $collab->find('div'); #->[0]->find('a');
+            $ncollab = scalar @$collab_divs;
+            if( $ncollab ) {
+                #say Dumper $tmp;
+                #say "NCOLLAB: $ncollab";
+		$tmp->{ncollab} = $ncollab;
+                for( my $i=0;  $i< $ncollab; $i++ ) {
+                    my $c0 = $collab_divs->[$i]->at('a');
+                    #say $c0; #->[0];
+                    #say $c0->attr('title');
 
-next if $tmp->{Fax} ne '044 241 35 30';
+                    push @{$tmp->{collab}}, $c0->attr('title');		
 
-my $collab = $dom->at('div.eintraginfo');
-my $collab_divs = $collab->find('div')->[0]->find('a');
-say $collab_divs->[0];
-exit 0;
+                    #say;
+                    #my $nc0 = scalar @$c0;
+                    #say "NC0: ", $nc0;
+                }
+            }
+        }
+        $tmp->{ncollab} = $ncollab;
 
-        say Dumper $tmp;
+
+if(0&& $names =~ m/\&/ or $ncollab ) {
+    say "Names: $names";
+    say "Ncollab: $ncollab";
+    say "Title: $title";
+    say "";
+}
+	say Dumper $tmp;
+        #say ;
     }
 } 
+
+
+
