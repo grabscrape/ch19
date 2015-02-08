@@ -15,19 +15,57 @@ use strict;
 my $output = `find ./Cache -type f -name file*.html | head -3000`;
 #my $output = `find ./Cache -type f -name file300.html | head -3000`;
 
+my @fields = (
+    'gnum',
+    'Info',
+    'Institution',
+    'Name',
+    'Title',
+    'Street',
+    'Postcode',
+    'City',
+    'AInfo',
+    'Homepage',
+    'E-Mail',
+    'Tel',
+    'Fax',
+    'Language',
+    'URL'
+);
+
 my $gnum=0;
 my @data = ();
+if( 1 )  {
 foreach my $line (split /\n/, $output ) {
     #say $line;
     push @data, parse( $line );
 #exit 0;
 }
+#exit 0;
+#say Dumper \@data;
+use utf8;
+open CSV, ">ch19.csv";
+say CSV join '|', @fields;
+foreach my $d (@data) {
+    say CSV join '|', map {
+        $d->{$_}
+    } @fields;
+}
+close CSV;
 
 
+}
+my $o=`python ./csv2excel.py --sep '|' --title --output ./ch19.xls ./ch19.csv`;
+say "Py output: $o" if $o;
+
+exit 0;
+##
 sub parse {
     my $file = shift;
     my $pre_data = shift;
 
+    my @data0;
+    my @data;
     my $body;
     open FD, $file or die "Error: $!";
     $body .= $_ for <FD>;
@@ -57,28 +95,21 @@ sub parse {
         my $link = $dom->at('h3')->at('a');
         $tmp->{Institution} = $link->text;
 #say "Inst: ", $tmp->{Institution};
-        $tmp->{Link} = $link->attr('href');
-#say "Link: ", $tmp->{Link};
+        $tmp->{URL} = $link->attr('href');
+#say "URL: ", $tmp->{URL};
        
         #->attr('href');
-        #say 'Link: ', $link;
+        #say 'URL: ', $link;
 
-        my $names = $dom->at('h4');
-        $names = $names?$names->text:'';
-        $tmp->{Names} =  $names;
+        my $name = $dom->at('h4');
+        $name = $name?$name->text:'';
+        $tmp->{Name} =  $name;
 
-#say "*********** Names: $tmp->{Names}";
+#say "*********** Name: $tmp->{Name}";
         my $title = $dom->at('h6');
         $title = ($title?$title->text:'');
         $tmp->{Title} = $title;
 
-if( $names =~ m/\&/ ) {
-    #say "             Names $names : $title \t\t ", $tmp->{Link} ;
-}
-#next;
-
-if( $names eq '' and $title ne '' ) {
-}
 
         my $address = $dom->at('address')->find('span');
         my $an = scalar @$address;
@@ -133,10 +164,10 @@ if( $names eq '' and $title ne '' ) {
                 my $e = $td1->at('a')->text;
                 $e =~ s/\s/@/;
                 #say $e;
-                $tmp->{Email} = $e;
+                $tmp->{'E-Mail'} = $e;
             } elsif( $td0 eq 'Telefon:' ) {
                 my $ph= $td1->at('span')->text;
-                $tmp->{Telefon} =  $ph;
+                $tmp->{Tel} =  $ph;
             } elsif( uc $td0 eq 'FAX:' ) {
                 #say "$td0 ", $td1->at('span')->text;
                 $tmp->{Fax} = $td1->at('span')->text;
@@ -186,7 +217,7 @@ if( $names eq '' and $title ne '' ) {
             if( $ncollab ) {
                 #say Dumper $tmp;
                 #say "NCOLLAB: $ncollab";
-		$tmp->{ncollab} = $ncollab;
+                $tmp->{ncollab} = $ncollab;
                 for( my $i=0;  $i< $ncollab; $i++ ) {
                     my $c0 = $collab_divs->[$i]->at('a');
                     #say $c0; #->[0];
@@ -200,18 +231,61 @@ if( $names eq '' and $title ne '' ) {
                 }
             }
         }
-        $tmp->{ncollab} = $ncollab;
+        #$tmp->{ncollab} = $ncollab;
 
-
-if(0&& $names =~ m/\&/ or $ncollab ) {
-    say "Names: $names";
-    say "Ncollab: $ncollab";
-    say "Title: $title";
-    say "";
-}
-	say Dumper $tmp;
-        #say ;
+        my $amper;
+        if( $name =~ m/\&/ ) {
+            $amper =1;
+            $tmp->{amper} = 1;
+            my( $one, $two ) = split /\s+\&\s+/, $name; 
+            push @{$tmp->{amper0}}, $one, $two;
+            #say "$name\n\t$one\n\t$two";
+        }
+        #say Dumper $tmp 
+        if( $name eq '' ) {
+            my @search = split /\s+/, $tmp->{Institution};
+            if( scalar @search == 2 ) {
+                $tmp->{Institution} = '';
+                $tmp->{Name} = join ' ', @search;
+            }
+        }
+        push @data0, $tmp;
     }
+
+    foreach my $d ( @data0 ) {
+       
+        push @data, $d; 
+
+        if( $d->{amper} ) {
+            my $gnum = $d->{gnum};
+            my $one = $d->{amper0}->[0];
+            my $two = $d->{amper0}->[1];
+
+            my %d0 = %{ $d };
+            $d0{gnum} = '';
+            $d0{Info} = 'and_'.$gnum;
+            $d0{Name} = $one;
+            push @data, \%d0;
+
+            my %d1 = %{ $d };
+            $d1{gnum} = '';
+            $d1{Info} = 'and_'.$gnum;
+            $d1{Name} = $two;
+            push @data, \%d1;
+        }
+
+        if( $d->{ncollab} ) {
+            foreach my $collab ( @{ $d->{collab} } ) {
+                my %d0 = %{ $d };
+                $d0{gnum} = '';
+                $d0{Info} = 'collab_'.$d->{gnum};
+                $d0{Name} = $collab;
+                push @data, \%d0;
+            }                                
+        }
+    }
+	
+    return @data;
 } 
 
 
